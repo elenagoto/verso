@@ -14,6 +14,13 @@ return new class extends Migration
         Schema::create('articles', function (Blueprint $table) {
             $table->id();
             $table->timestamps();
+            $table->string('title');
+            $table->string('slug')->unique();
+            $table->text('content');
+            $table->string('status');
+            $table->string('image')->nullable();
+            $table->foreignId('user_id')->constrained()->onDelete('cascade');
+            $table->softDeletes();
         });
     }
 
