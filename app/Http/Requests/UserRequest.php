@@ -4,6 +4,9 @@ namespace App\Http\Requests;
 
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use App\Enums\UserType;
+use Illuminate\Validation\Rule;
+use App\Models\User;
 
 class UserRequest extends FormRequest
 {
@@ -12,18 +15,37 @@ class UserRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return false;
+        return $this->user()->can('update', $this->editedUser());
     }
 
     /**
-     * Get the validation rules that apply to the request.
-     *
      * @return array<string, ValidationRule|array<mixed>|string>
      */
     public function rules(): array
     {
         return [
-            //
+            'name' => ['required', 'string', 'max:255'],
+            'email' => [
+                'required',
+                'email',
+                'max:255',
+                Rule::unique('users', 'email')->ignore($this->editedUser()),
+            ],
+            'type' => [
+                Rule::prohibitedIf(! $this->canChangeType()),
+                'nullable',
+                Rule::enum(UserType::class),
+            ],
         ];
+    }
+
+    private function editedUser(): User
+    {
+        return $this->route('user');
+    }
+
+    private function canChangeType(): bool
+    {
+        return $this->user()->can('changeType', $this->editedUser());
     }
 }
