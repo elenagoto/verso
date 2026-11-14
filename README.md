@@ -1,58 +1,85 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# 📖 Verso
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+A small content manager built with Laravel: authors write articles, admins manage users. The scope is kept deliberately small, so the focus stays on clean Laravel conventions and on testing.
 
-## About Laravel
+> Work in progress. See [Status](#status) for what is done and what comes next.
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## Features
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+- **Articles** with a title, slug, content and an optional image.
+    - Status stored as a backed enum (`draft`, `published`, `archived`) and cast on the model.
+    - A `published` query scope, so only published articles appear publicly.
+    - Soft deletes: a deleted article is hidden, not erased.
+- **Users** with a role stored as a backed enum (`admin`, `editor`).
+    - Every user can edit their own profile.
+    - Admins can list all users (with their article count) and change other users' roles. An admin cannot change their own role, so the app can never be left without an admin.
+- **Authorisation** through policies, so the rules live in one place and controllers, form requests and views all ask the same question.
+- **Validation** through form requests, so controllers only receive data that is already valid and authorised.
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+## Stack
 
-## Learning Laravel
+|           |                                                   |
+| --------- | ------------------------------------------------- |
+| Language  | PHP 8.4                                           |
+| Framework | Laravel 13                                        |
+| Database  | MySQL 8.4 (application), SQLite in memory (tests) |
+| Tests     | PHPUnit 12                                        |
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+## Design notes
 
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+- **Roles are an enum, not a table.** A role decides what the code allows, so adding one always means changing the code (the policies). Keeping roles in an enum keeps that knowledge in one place and avoids comparing against names stored in the database.
+- **Factories default to the least privileged state.** `User::factory()` creates an editor; tests ask for an admin explicitly with `User::factory()->admin()`. Nothing that affects authorisation is random, so tests are deterministic.
+- **Strict models outside production.** `Model::shouldBeStrict()` makes a typo in an attribute name or an accidental N+1 query throw an exception in development and tests, instead of failing silently.
+- **Tests run on SQLite, the app on MySQL.** This is fine for the features used here (string-backed enums, soft deletes, scopes, policies). Database-specific SQL, such as some JSON or full-text queries, could behave differently on the two.
 
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
+## Running it locally
 
-## Agentic Development
-
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+Requirements: PHP 8.4, Composer, Node.js and MySQL, or any Docker setup that provides them.
 
 ```bash
-composer require laravel/boost --dev
-
-php artisan boost:install
+git clone https://github.com/elenagoto/verso.git
+cd verso
+composer install
+cp .env.example .env
+php artisan key:generate
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+Set the `DB_*` values in `.env` for your MySQL database, then:
 
-## Contributing
+```bash
+php artisan migrate --seed
+npm install
+npm run build
+php artisan serve
+```
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+The seeder creates an admin account: `test@example.com`, password `password`. It is for local development only.
 
-## Code of Conduct
+## Tests
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+```bash
+php artisan test
+```
 
-## Security Vulnerabilities
+Tests use SQLite in memory (set in `phpunit.xml`), so they never touch the development database.
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+## Status
+
+Done:
+
+- Models, migrations, enums, factories and seeder
+- Article and user controllers
+- Form requests and the user policy
+
+Next:
+
+- Routes and login
+- Article policy (only the author or an admin can edit)
+- Blade views
+- Test suite
+- Continuous integration with GitHub Actions
+- Deployment
 
 ## License
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+MIT
