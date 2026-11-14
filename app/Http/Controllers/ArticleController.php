@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
+
 use App\Http\Requests\ArticleRequest;
 use App\Models\Article;
 
@@ -34,9 +34,8 @@ class ArticleController extends Controller
     public function store(ArticleRequest $request)
     {
 
-        $validated = $request->validated();
 
-        $article = Article::create($validated);
+        $article = $request->user()->articles()->create($request->validated());
 
         return redirect()->route('articles.show', $article);
     }
