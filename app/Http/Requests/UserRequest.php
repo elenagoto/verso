@@ -33,7 +33,7 @@ class UserRequest extends FormRequest
             ],
             'type' => [
                 Rule::prohibitedIf(! $this->canChangeType()),
-                'nullable',
+                'sometimes',
                 Rule::enum(UserType::class),
             ],
         ];
